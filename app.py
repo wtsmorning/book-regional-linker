@@ -109,16 +109,27 @@ def extract_asin(url: str) -> str | None:
     return None
 
 
-def generate_id(length: int = 7) -> str:
-    """Generate a unique random short ID."""
-    chars = string.ascii_letters + string.digits
+def generate_id(author: str = "", title: str = "") -> str:
+    """Generate a unique short ID from author and title."""
+    # Create slug from author + title
+    slug_text = f"{author} {title}".lower().strip()
+    # Replace spaces and special chars with hyphens
+    slug = re.sub(r"[^a-z0-9]+", "-", slug_text).strip("-")
+    # Limit length to 50 chars
+    slug = slug[:50]
+    
     conn = get_db()
+    base_slug = slug
+    counter = 1
+    
+    # If slug already exists, append a number
     while True:
-        new_id = "".join(random.choices(chars, k=length))
-        exists = conn.execute("SELECT id FROM links WHERE id = ?", (new_id,)).fetchone()
+        check_id = slug if counter == 1 else f"{base_slug}-{counter}"
+        exists = conn.execute("SELECT id FROM links WHERE id = ?", (check_id,)).fetchone()
         if not exists:
             conn.close()
-            return new_id
+            return check_id
+        counter += 1
 
 
 def get_country_from_ip(ip: str) -> str:
@@ -174,7 +185,7 @@ def create_link():
     if not asin:
         return jsonify({"error": "Could not find an ASIN in that URL. Please paste a valid Amazon book page link."}), 400
 
-    link_id = generate_id()
+    link_id = generate_id(author, title)
     conn = get_db()
     with conn:
         conn.execute(
