@@ -30,25 +30,29 @@
     <p id="url-error" class="text-red-400 text-sm mt-1 hidden"></p>
   </div>
 
-  <!-- Book info (optional) -->
+  <!-- Book info (mandatory) -->
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label class="block text-sm font-medium text-slate-300 mb-2">Book Title <span class="text-slate-500">(optional)</span></label>
+      <label class="block text-sm font-medium text-slate-300 mb-2">Book Title <span class="text-amber-400">*</span></label>
       <input
         id="title"
         type="text"
         placeholder="e.g. The Pragmatic Programmer"
         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-600 transition"
+        required
       />
+      <p id="title-error" class="text-red-400 text-sm mt-1 hidden"></p>
     </div>
     <div>
-      <label class="block text-sm font-medium text-slate-300 mb-2">Author <span class="text-slate-500">(optional)</span></label>
+      <label class="block text-sm font-medium text-slate-300 mb-2">Author <span class="text-amber-400">*</span></label>
       <input
         id="author"
         type="text"
         placeholder="e.g. David Thomas"
         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-600 transition"
+        required
       />
+      <p id="author-error" class="text-red-400 text-sm mt-1 hidden"></p>
     </div>
   </div>
 
@@ -170,12 +174,32 @@
   async function createLink() {
     const btn = document.getElementById('create-btn');
     const errEl = document.getElementById('url-error');
+    const titleErrEl = document.getElementById('title-error');
+    const authorErrEl = document.getElementById('author-error');
+    
     errEl.classList.add('hidden');
+    titleErrEl.classList.add('hidden');
+    authorErrEl.classList.add('hidden');
 
     const amazon_url = document.getElementById('amazon_url').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const author = document.getElementById('author').value.trim();
+
     if (!amazon_url) {
       errEl.textContent = 'Please enter an Amazon URL.';
       errEl.classList.remove('hidden');
+      return;
+    }
+
+    if (!title) {
+      titleErrEl.textContent = 'Book title is required.';
+      titleErrEl.classList.remove('hidden');
+      return;
+    }
+
+    if (!author) {
+      authorErrEl.textContent = 'Author name is required.';
+      authorErrEl.classList.remove('hidden');
       return;
     }
 
@@ -194,8 +218,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amazon_url,
-          title:  document.getElementById('title').value.trim(),
-          author: document.getElementById('author').value.trim(),
+          title,
+          author,
           extra_stores,
         }),
       });

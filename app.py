@@ -111,18 +111,14 @@ def extract_asin(url: str) -> str | None:
 
 def generate_id(author: str = "", title: str = "") -> str:
     """Generate a unique short ID from author and title."""
-    # Create slug from author + title
     slug_text = f"{author} {title}".lower().strip()
-    # Replace spaces and special chars with hyphens
     slug = re.sub(r"[^a-z0-9]+", "-", slug_text).strip("-")
-    # Limit length to 50 chars
-    slug = slug[:50]
+    slug = slug[:40]
     
     conn = get_db()
     base_slug = slug
     counter = 1
     
-    # If slug already exists, append a number
     while True:
         check_id = slug if counter == 1 else f"{base_slug}-{counter}"
         exists = conn.execute("SELECT id FROM links WHERE id = ?", (check_id,)).fetchone()
@@ -201,8 +197,9 @@ def create_link():
     conn.close()
 
     base = request.host_url.rstrip("/")
+    short_link = shorten_url(f"{base}/b/{link_id}")
     return jsonify({
-        "link":  f"{base}/b/{link_id}",
+        "link": short_link,  # e.g., "https://tinyurl.com/abc123"
         "stats": f"{base}/stats/{link_id}",
         "id":    link_id,
         "asin":  asin,
