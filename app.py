@@ -172,10 +172,16 @@ def create_link():
         return jsonify({"error": "Invalid request body."}), 400
 
     amazon_url  = data.get("amazon_url", "").strip()
-    title       = data.get("title", "").strip() or "Unknown Book"
+    title       = data.get("title", "").strip()
     author      = data.get("author", "").strip()
     cover_url   = data.get("cover_url", "").strip()
     extra_stores = data.get("extra_stores", {})
+
+    if not title:
+        return jsonify({"error": "Book title is required."}), 400
+    
+    if not author:
+        return jsonify({"error": "Author name is required."}), 400
 
     asin = extract_asin(amazon_url)
     if not asin:
@@ -197,9 +203,11 @@ def create_link():
     conn.close()
 
     base = request.host_url.rstrip("/")
-    short_link = shorten_url(f"{base}/b/{link_id}")
+    long_link = f"{base}/b/{link_id}"
+    short_link = shorten_url(long_link)
+    
     return jsonify({
-        "link": short_link,  # e.g., "https://tinyurl.com/abc123"
+        "link":  short_link,
         "stats": f"{base}/stats/{link_id}",
         "id":    link_id,
         "asin":  asin,
