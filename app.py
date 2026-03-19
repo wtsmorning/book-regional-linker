@@ -203,11 +203,8 @@ def create_link():
     conn.close()
 
     base = request.host_url.rstrip("/")
-    long_link = f"{base}/b/{link_id}"
-    short_link = shorten_url(long_link)
-    
     return jsonify({
-        "link":  short_link,
+        "link":  f"{base}/b/{link_id}",
         "stats": f"{base}/stats/{link_id}",
         "id":    link_id,
         "asin":  asin,
