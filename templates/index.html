@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}BookLinker — Create a Smart Book Link{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-10">
+  <h1 class="text-4xl font-bold mb-3">
+    One link. <span class="gradient-text">Every region.</span>
+  </h1>
+  <p class="text-slate-400 text-lg max-w-xl mx-auto">
+    Paste an Amazon book URL and get a smart link that sends each visitor
+    to their local Amazon store automatically.
+  </p>
+</div>
+
+<!-- Form card -->
+<div class="glass rounded-2xl p-6 sm:p-8 space-y-6">
+
+  <!-- Amazon URL -->
+  <div>
+    <label class="block text-sm font-medium text-slate-300 mb-2">
+      Amazon Book URL <span class="text-amber-400">*</span>
+    </label>
+    <input
+      id="amazon_url"
+      type="url"
+      placeholder="https://www.amazon.com/dp/B0XXXXXX"
+      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-600 transition"
+    />
+    <p id="url-error" class="text-red-400 text-sm mt-1 hidden"></p>
+  </div>
+
+  <!-- Book info (optional) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-slate-300 mb-2">Book Title <span class="text-slate-500">(optional)</span></label>
+      <input
+        id="title"
+        type="text"
+        placeholder="e.g. The Pragmatic Programmer"
+        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-600 transition"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-300 mb-2">Author <span class="text-slate-500">(optional)</span></label>
+      <input
+        id="author"
+        type="text"
+        placeholder="e.g. David Thomas"
+        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-600 transition"
+      />
+    </div>
+  </div>
+
+  <!-- Other stores toggle -->
+  <div>
+    <button
+      id="stores-toggle"
+      type="button"
+      onclick="toggleStores()"
+      class="flex items-center gap-2 text-amber-400 text-sm font-medium hover:text-amber-300 transition"
+    >
+      <span id="toggle-icon">＋</span>
+      Add other store links (Apple Books, Kobo, Google Play…)
+    </button>
+
+    <div id="stores-panel" class="hidden mt-4 space-y-3">
+      <p class="text-slate-500 text-xs">
+        If you add other store links, visitors will see a store chooser page instead of a direct redirect.
+      </p>
+      {% for key, name in other_stores.items() %}
+      <div class="flex items-center gap-3">
+        <label class="w-36 text-sm text-slate-400 shrink-0">{{ name }}</label>
+        <input
+          id="store_{{ key }}"
+          type="url"
+          placeholder="https://..."
+          class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 text-sm transition"
+        />
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button
+    id="create-btn"
+    onclick="createLink()"
+    class="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold py-3.5 rounded-xl transition text-base"
+  >
+    Generate Smart Link
+  </button>
+
+</div>
+
+<!-- Result card (hidden until link is created) -->
+<div id="result-card" class="hidden mt-6 glass rounded-2xl p-6 space-y-4">
+  <div class="flex items-center gap-2 text-green-400 font-semibold">
+    <span>✓</span> Your link is ready!
+  </div>
+
+  <div>
+    <label class="block text-xs text-slate-500 mb-1 uppercase tracking-wide">Share this link</label>
+    <div class="flex gap-2">
+      <input
+        id="result-link"
+        readonly
+        type="text"
+        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-amber-400 font-mono text-sm"
+      />
+      <button
+        onclick="copyLink('result-link', this)"
+        class="bg-slate-700 hover:bg-slate-600 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+      >
+        Copy
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs text-slate-500 mb-1 uppercase tracking-wide">Stats page</label>
+    <div class="flex gap-2">
+      <input
+        id="result-stats"
+        readonly
+        type="text"
+        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-400 font-mono text-sm"
+      />
+      <a
+        id="stats-link"
+        href="#"
+        target="_blank"
+        class="bg-slate-700 hover:bg-slate-600 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+      >
+        Open
+      </a>
+    </div>
+  </div>
+
+  <div class="text-slate-500 text-xs pt-1">
+    Detected region: visitors are automatically sent to their local Amazon store.
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+  {% for step in [
+    ("1", "Paste URL", "Drop in any Amazon book page link"),
+    ("2", "Get a smart link", "One short URL, works worldwide"),
+    ("3", "Auto-redirect", "Visitors land on their local Amazon store"),
+  ] %}
+  <div class="glass rounded-xl p-5">
+    <div class="text-2xl font-bold text-amber-400 mb-2">{{ step[0] }}</div>
+    <div class="font-semibold mb-1">{{ step[1] }}</div>
+    <div class="text-slate-500 text-sm">{{ step[2] }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  const OTHER_STORE_KEYS = {{ other_stores.keys() | list | tojson }};
+
+  function toggleStores() {
+    const panel = document.getElementById('stores-panel');
+    const icon  = document.getElementById('toggle-icon');
+    const hidden = panel.classList.toggle('hidden');
+    icon.textContent = hidden ? '＋' : '－';
+  }
+
+  async function createLink() {
+    const btn = document.getElementById('create-btn');
+    const errEl = document.getElementById('url-error');
+    errEl.classList.add('hidden');
+
+    const amazon_url = document.getElementById('amazon_url').value.trim();
+    if (!amazon_url) {
+      errEl.textContent = 'Please enter an Amazon URL.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    const extra_stores = {};
+    for (const key of OTHER_STORE_KEYS) {
+      const val = document.getElementById('store_' + key)?.value.trim();
+      if (val) extra_stores[key] = val;
+    }
+
+    btn.textContent = 'Creating…';
+    btn.disabled = true;
+
+    try {
+      const resp = await fetch('/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amazon_url,
+          title:  document.getElementById('title').value.trim(),
+          author: document.getElementById('author').value.trim(),
+          extra_stores,
+        }),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        errEl.textContent = data.error || 'Something went wrong.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('result-link').value  = data.link;
+      document.getElementById('result-stats').value = data.stats;
+      document.getElementById('stats-link').href    = data.stats;
+      document.getElementById('result-card').classList.remove('hidden');
+      document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
+
+    } catch (e) {
+      errEl.textContent = 'Network error. Please try again.';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.textContent = 'Generate Smart Link';
+      btn.disabled = false;
+    }
+  }
+
+  function copyLink(inputId, btn) {
+    const val = document.getElementById(inputId).value;
+    navigator.clipboard.writeText(val).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Stats — {{ link.title }} — BookLinker{% endblock %}
+
+{% block content %}
+
+<div class="mb-8">
+  <a href="/" class="text-slate-500 hover:text-amber-400 text-sm transition">← Create another link</a>
+</div>
+
+<!-- Summary card -->
+<div class="glass rounded-2xl p-6 mb-6">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold">{{ link.title }}</h1>
+      {% if link.author %}
+      <p class="text-slate-400 text-sm mt-1">{{ link.author }}</p>
+      {% endif %}
+      <p class="text-slate-600 text-xs mt-2">ASIN: <span class="font-mono">{{ link.asin }}</span></p>
+    </div>
+    <div class="text-right">
+      <div class="text-4xl font-bold text-amber-400">{{ link.total_clicks }}</div>
+      <div class="text-slate-500 text-sm">total clicks</div>
+    </div>
+  </div>
+
+  <div class="mt-4 pt-4 border-t border-slate-800 flex items-center gap-3">
+    <input
+      id="short-url"
+      readonly
+      value="{{ short_url }}"
+      class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-amber-400 font-mono text-sm"
+    />
+    <button
+      onclick="copyLink()"
+      class="bg-slate-700 hover:bg-slate-600 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+    >
+      Copy
+    </button>
+  </div>
+</div>
+
+<!-- Country breakdown -->
+{% if countries %}
+<div class="glass rounded-2xl p-6">
+  <h2 class="font-semibold mb-4 text-slate-300">Clicks by country</h2>
+  <div class="space-y-2">
+    {% set max_count = countries[0].count %}
+    {% for c in countries %}
+    <div class="flex items-center gap-3">
+      <span class="text-slate-400 text-sm w-40 shrink-0">{{ c.name }}</span>
+      <div class="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
+        <div
+          class="bg-amber-400 h-2 rounded-full"
+          style="width: {{ (c.count / max_count * 100) | int }}%"
+        ></div>
+      </div>
+      <span class="text-slate-400 text-sm w-8 text-right">{{ c.count }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="glass rounded-2xl p-10 text-center text-slate-500">
+  No clicks yet. Share your link to see stats here.
+</div>
+{% endif %}
+
+<script>
+  function copyLink() {
+    const val = document.getElementById('short-url').value;
+    navigator.clipboard.writeText(val).then(() => {
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+  }
+</script>
+
+{% endblock %}
